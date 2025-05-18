@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Online Voting System - Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #d8ded6; margin: 0; padding: 0; }
+  header { 
+    background: #000000; 
+    color: rgb(217, 111, 111); 
+    padding: 15px 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+  }
+  header .user-welcome {
+    /* Styles for "Welcome, User" text if needed */
+  }
+  header .header-actions a, header .header-actions button {
+    margin-left: 15px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    font-size: 0.9em;
+    border: none;
+    cursor: pointer;
+  }
+  header .header-actions a.results-link { 
+    background-color: #17a2b8; /* Info blue */
+  }
+  header .header-actions a.results-link:hover { 
+    background-color: #138496; 
+  }
+  header .header-actions button#logoutBtn {
+    background-color: #dc3545; /* Danger red for logout */
+  }
+   header .header-actions button#logoutBtn:hover {
+    background-color: #c82333;
+  }
+
+  .container { max-width: 600px; margin: 30px auto; background: rgb(152, 76, 76); padding: 20px; border-radius: 8px; }
+  .candidate { border: 2px solid #ceb8c9; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .candidate-info { flex-grow: 1; }
+  .candidate-info .votes { font-size: 0.9em; color: #f0f0f0; margin-left: 10px; }
+  button.vote-btn { background: #007bff; border: none; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+  button.vote-btn[disabled] { background: #ccc; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="user-welcome">Welcome, <span id="userName"></span></div>
+  <div class="header-actions">
+    <a href="results.html" class="results-link">View Live Results</a>
+    <button id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  <h2>Vote for Your Candidate</h2>
+  <div id="candidatesList"></div>
+</div>
+
+<script>
+  const candidates = [
+    { id: 1, name: "BJP", votes: 0 },
+    { id: 2, name: "TTP", votes: 0 },
+    { id: 3, name: "CONGRESS", votes: 0 },
+    { id: 4, name: "AAM AADMI PARTY ", votes: 0 },
+    { id: 5, name: "Jammu & Kashmir National Panthers Party", votes: 0 },
+    { id: 6, name: "Janata Dal (United)", votes: 0 },
+    { id: 7, name: "Indian Union Muslim League", votes: 0 },
+    { id: 8, name: "Lok Jan Shakti Party", votes: 0 },
+    { id: 9, name: "Nationalist Congress Party", votes: 0 },
+    { id: 10, name: "Communist Party of India", votes: 0 },
+  ];
+
+  function loadCandidates() {
+    const candidatesList = document.getElementById('candidatesList');
+    candidatesList.innerHTML = '';
+
+    let storedVotes = JSON.parse(localStorage.getItem('votes')) || {};
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    const hasVoted = loggedInUser?.hasVoted;
+
+    if (candidates.length === 0) {
+      candidatesList.innerHTML = "<p>No candidates available at the moment.</p>";
+      return;
+    }
+
+    candidates.forEach(c => {
+      const currentVotes = storedVotes[c.id] || 0;
+      const div = document.createElement('div');
+      div.className = 'candidate';
+      div.innerHTML = `
+        <div class="candidate-info">
+          <span>${c.name}</span>
+          <span class="votes">(Votes: ${currentVotes})</span>
+        </div>
+        <button class="vote-btn" ${hasVoted ? 'disabled' : ''} onclick="vote(${c.id})">Vote</button>
+      `;
+      candidatesList.appendChild(div);
+    });
+  }
+
+  function vote(candidateId) {
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (loggedInUser.hasVoted) {
+      alert('You have already voted.');
+      return;
+    }
+
+    let votes = JSON.parse(localStorage.getItem('votes')) || {};
+    votes[candidateId] = (votes[candidateId] || 0) + 1;
+    localStorage.setItem('votes', JSON.stringify(votes));
+
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    users = users.map(u => {
+      if (u.email === loggedInUser.email) u.hasVoted = true;
+      return u;
+    });
+    localStorage.setItem('users', JSON.stringify(users));
+
+    loggedInUser.hasVoted = true;
+    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+
+    alert('Vote recorded! Thank you.');
+    loadCandidates(); // Reload candidates to update vote counts and disable button
+  }
+
+  function logout() {
+    localStorage.removeItem('loggedInUser');
+    window.location.href = 'login.html';
+  }
+
+  window.onload = () => {
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (!loggedInUser) {
+      window.location.href = 'login.html';
+      return;
+    }
+    document.getElementById('userName').textContent = loggedInUser.name;
+    document.getElementById('logoutBtn').onclick = logout;
+    loadCandidates();
+  };
+</script>
+
+</body>
+</html>
